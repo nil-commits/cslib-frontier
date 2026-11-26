@@ -319,12 +319,11 @@ private theorem facts (h : c.check G = true) :
       ((c.β : ℝ) • 1 - G.toSystem.Bᵀ * re (ofLists n n c.P) * G.toSystem.B).PosSemidef := by
   simp only [check, Bool.and_eq_true, decide_eq_true_eq] at h
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨-, -⟩, hα⟩, hlo⟩, hlh⟩, hγ⟩, hβ⟩, hd⟩, hl⟩, hh⟩, ho⟩, hi⟩ := h
-  have hd := c.decayW.posSemidef_of_checkPosSemidef hd
-  have hl := c.loW.posSemidef_of_checkPosSemidef hl
-  have hh := c.hiW.posSemidef_of_checkPosSemidef hh
-  have ho := c.outputW.posSemidef_of_checkPosSemidef ho
-  have hi := c.inputW.posSemidef_of_checkPosSemidef hi
-  change (re _).PosSemidef at hd hl hh ho hi
+  have hd : (re _).PosSemidef := c.decayW.posSemidef_of_checkPosSemidef hd
+  have hl : (re _).PosSemidef := c.loW.posSemidef_of_checkPosSemidef hl
+  have hh : (re _).PosSemidef := c.hiW.posSemidef_of_checkPosSemidef hh
+  have ho : (re _).PosSemidef := c.outputW.posSemidef_of_checkPosSemidef ho
+  have hi : (re _).PosSemidef := c.inputW.posSemidef_of_checkPosSemidef hi
   simp only [re_rowsLin, re_lyapunovResidual, re_rowsOne, re_rowsGram,
     re_rowsCongr] at hd hl hh ho hi
   refine ⟨hα, hlo, hlh, hγ, hβ, ?_, ?_, ?_, ?_, ?_⟩
@@ -349,7 +348,7 @@ theorem dotProduct_self_le (h : c.check G = true) {x : ℝ → Fin n → ℝ}
 theorem isExponentiallyStable (h : c.check G = true) :
     (toEuclideanCLM (𝕜 := ℝ) G.toSystem.A).IsExponentiallyStable := by
   obtain ⟨hα, hlo, hlh, -, -, -, -, -, -, -⟩ := facts h
-  have hq : ∀ y : EuclideanSpace ℝ (Fin n), ‖y‖ ^ 2 = y.ofLp ⬝ᵥ y.ofLp := fun y => by
+  have hq (y : EuclideanSpace ℝ (Fin n)) : ‖y‖ ^ 2 = y.ofLp ⬝ᵥ y.ofLp := by
     rw [EuclideanSpace.norm_sq_eq]
     simp [dotProduct, sq]
   refine ⟨Real.sqrt (c.hi / c.lo), c.α, by exact_mod_cast hα, fun x hx t ht => ?_⟩
@@ -358,8 +357,7 @@ theorem isExponentiallyStable (h : c.check G = true) :
   have hb := dotProduct_self_le h hx' ht
   rw [← hq, ← hq] at hb
   have hhl : (0 : ℝ) ≤ c.hi / c.lo := by exact_mod_cast div_nonneg (hlo.le.trans hlh) hlo.le
-  have hr : 0 ≤ Real.sqrt (c.hi / c.lo) * Real.exp (-(c.α * t)) * ‖x 0‖ := by positivity
-  refine pow_le_pow_iff_left₀ (norm_nonneg _) hr two_ne_zero |>.1 ?_
+  refine pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero |>.1 ?_
   rw [mul_pow, mul_pow, Real.sq_sqrt hhl, ← Real.exp_nat_mul]
   convert hb using 3
   push_cast; ring_nf
@@ -392,12 +390,11 @@ theorem responseKernel_mulVec_sq_le_peak (h : c.check G = true) (v : Fin m → �
     G.toSystem.responseKernel t *ᵥ v ⬝ᵥ G.toSystem.responseKernel t *ᵥ v ≤
       c.γ * c.β * (v ⬝ᵥ v) := by
   obtain ⟨hα, -, -, hγ, hβ, -, -, -, -, -⟩ := facts h
-  refine (responseKernel_mulVec_sq_le h v ht).trans ?_
+  have hgb : 0 ≤ (c.γ : ℝ) * c.β * (v ⬝ᵥ v) :=
+    mul_nonneg (by exact_mod_cast mul_nonneg hγ hβ) (by simpa using dotProduct_self_star_nonneg v)
   have he : Real.exp (-(2 * (c.α : ℝ)) * t) ≤ 1 :=
     Real.exp_le_one_iff.2 (by nlinarith [(by exact_mod_cast hα : (0 : ℝ) < c.α)])
-  have hv0 : 0 ≤ v ⬝ᵥ v := by simpa using dotProduct_self_star_nonneg v
-  have hgb : (0 : ℝ) ≤ c.γ * c.β := by exact_mod_cast mul_nonneg hγ hβ
-  nlinarith [mul_nonneg hgb hv0]
+  exact (responseKernel_mulVec_sq_le h v ht).trans (by nlinarith)
 
 variable (c) in
 /-- Whether `c` certifies settling of the impulse response below `ε` after time `T` for inputs
@@ -481,9 +478,8 @@ theorem integrableOn_Ioi_and_integral_Ioi_frobeniusSq_le (h : c.check G = true) 
         c.γ * (rowsTrace m (rowsCongr n m G.B c.P) : ℚ) * Real.exp (-(2 * c.α) * T) /
           (2 * c.α) := by
   obtain ⟨hα, -, -, hγ, -, hd, -, -, ho, -⟩ := facts h
-  have := LTISystem.integrableOn_Ioi_and_integral_Ioi_frobeniusSq_le
+  simpa only [trace_toSystem] using LTISystem.integrableOn_Ioi_and_integral_Ioi_frobeniusSq_le
     (by exact_mod_cast hα) hd ho (by exact_mod_cast hγ) hT
-  rwa [trace_toSystem] at this
 
 /-- **Certified numerical energy tail.** If the kernel accepts `c` for `G` and
 `c.tailBelow G tail T N`, then `∫_T^∞ ‖h t‖_F² dt ≤ tail`, the integrand being integrable. -/
@@ -553,11 +549,11 @@ theorem integrableOn_Ioi_and_integral_eq (h : c.check G = true) :
       ∫ t in Ioi 0, ∑ i, ∑ j, G.toSystem.responseKernel t i j ^ 2 = c.energy := by
   have hA := isExponentiallyStable h
   simp only [check, Bool.and_eq_true, beq_iff_eq] at h
-  have hR := congrArg re (ofLists_eq_zero_of_allZero (k := n) (l := n) h.1.2)
-  rw [re_gramianResidual, show re (0 : Matrix (Fin n) (Fin n) ℚ) = 0 from Matrix.map_zero _
-    Rat.cast_zero, neg_eq_zero] at hR
-  have := LTISystem.integrableOn_Ioi_and_integral_frobeniusSq_eq hR hA
-  rwa [trace_toSystem, h.2] at this
+  have hR := (congrArg re (ofLists_eq_zero_of_allZero (k := n) (l := n) h.1.2)).trans
+    (Matrix.map_zero _ Rat.cast_zero)
+  rw [re_gramianResidual, neg_eq_zero] at hR
+  simpa only [trace_toSystem, h.2] using
+    LTISystem.integrableOn_Ioi_and_integral_frobeniusSq_eq hR hA
 
 end EnergyCert
 
