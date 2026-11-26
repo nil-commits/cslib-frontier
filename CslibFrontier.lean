@@ -4264,6 +4264,7 @@ public import CslibFrontier.Crypto.Protocols.KEM.FujisakiOkamoto.Correctness
 public import CslibFrontier.GameTheory.Mechanism.BudgetedAuction.Impossibility
 public import CslibFrontier.Computability.WordRAM.Randomized.LoopSegment
 public import CslibFrontier.Computability.MCSP.SuccinctNP.Words
+public import CslibFrontier.Foundations.Combinatorics.Sperner.Simplex
 public import CslibFrontier.Crypto.Computational.Homomorphic.Leveled.GuessOverhead
 public import CslibFrontier.Crypto.Computational.Encryption.Basic
 public import CslibFrontier.Crypto.Computational.PedersenCommitment.PublicOperations
